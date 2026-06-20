@@ -1,0 +1,13 @@
+# Claude Code local settings (machine-specific, not meant to be shared)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Downloaded datasets (re-downloaded automatically by the notebook)
+data/
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
