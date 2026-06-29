@@ -3,7 +3,6 @@
 .claude/scheduled_tasks.lock
 
 # Downloaded datasets (re-downloaded automatically by the notebook)
-data/
 
 # Python
 __pycache__/
