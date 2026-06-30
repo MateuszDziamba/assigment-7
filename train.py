@@ -13,7 +13,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 n_estimators = 100
 max_depth = 1
 
-# One run = one experiment attempt
 with mlflow.start_run():
     model = RandomForestClassifier(
         n_estimators=n_estimators,
