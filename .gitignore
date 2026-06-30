@@ -10,3 +10,8 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
+model/
+mlops-pipeline/
+mlruns/
+mlflow.db
+.DS_Store
