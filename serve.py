@@ -1,9 +1,13 @@
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
 import mlflow.sklearn
 import pandas as pd
 
+LOG_FILE = Path("predictions.jsonl")
 model = None
 
 
@@ -33,6 +37,17 @@ class WineFeatures(BaseModel):
     proline: float
 
 
+def log_prediction(features, prediction, confidence):
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "input": features,
+        "prediction": prediction,
+        "confidence": confidence,
+    }
+    with LOG_FILE.open("a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "model_loaded": model is not None}
@@ -40,8 +55,33 @@ def health():
 
 @app.post("/predict")
 def predict(features: WineFeatures):
-    values = list(features.model_dump().values())
-    X = pd.DataFrame([values], columns=model.feature_names_in_)
-    pred = int(model.predict(X)[0])
-    confidence = float(model.predict_proba(X)[0].max())
-    return {"prediction": pred, "confidence": round(confidence, 4)}
+    data = features.model_dump()
+    X = pd.DataFrame([list(data.values())], columns=model.feature_names_in_)
+    prediction = int(model.predict(X)[0])
+    confidence = round(float(model.predict_proba(X)[0].max()), 4)
+    log_prediction(data, prediction, confidence)
+    return {"prediction": prediction, "confidence": confidence}
+
+
+@app.get("/stats")
+def stats():
+    if not LOG_FILE.exists():
+        return {"total_predictions": 0}
+    records = [json.loads(l) for l in LOG_FILE.read_text().splitlines() if l.strip()]
+    if not records:
+        return {"total_predictions": 0}
+    class_counts = {}
+    conf_sum = 0.0
+    low_conf = 0
+    for r in records:
+        key = str(r["prediction"])
+        class_counts[key] = class_counts.get(key, 0) + 1
+        conf_sum += r["confidence"]
+        if r["confidence"] < 0.7:
+            low_conf += 1
+    return {
+        "total_predictions": len(records),
+        "class_distribution": class_counts,
+        "average_confidence": round(conf_sum / len(records), 4),
+        "low_confidence_count": low_conf,
+    }

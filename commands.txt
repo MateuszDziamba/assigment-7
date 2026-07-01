@@ -1,0 +1,2 @@
+uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
+13.0,2.0,2.3,18.0,100,2.5,2.0,0.3,1.5,5.0,1.0,3.0,800,0
